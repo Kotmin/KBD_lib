@@ -1,0 +1,197 @@
+#include "keyboard.h"
+#include <avr/io.h>
+#include <util/delay.h>
+
+void col_swap(const char port){
+
+	switch(port){
+		case 'A':
+			if(!(PINA & (1<<PA4))){
+				PORTA = 0b01111111;
+				}else{
+				PORTA >>= 1;
+				PORTA |= 0b10000000;
+			}
+			break;
+		case 'B':
+			if(!(PINB & (1<<PB4))){
+				PORTB = 0b01111111;
+				}else{
+				PORTB >>= 1;
+				PORTB |= 0b10000000;
+			}
+			break;
+		case 'C':
+			if(!(PINC & (1<<PC4))){
+				PORTC = 0b01111111;
+				}else{
+				PORTC >>= 1;
+				PORTC |= 0b10000000;
+			}
+			break;
+		case 'D':
+			if(!(PIND & (1<<PD4))){
+				PORTA = 0b01111111;
+				}else{
+				PORTD >>= 1;
+				PORTD |= 0b10000000;
+			}
+			break;
+	}
+}
+
+
+void set_DDR(const char port){
+	switch(port){
+		case 'A':
+			DDRA |= 0xF0;
+			PORTA |= 0xEF;
+			break;
+		case 'B':
+			DDRB |= 0xF0;
+			PORTB |= 0xEF;
+			break;
+		case 'C':
+			DDRC |= 0xF0;
+			PORTC |= 0xEF;
+			break;
+		case 'D':
+			DDRD |= 0xF0;
+			PORTD |= 0xEF;
+			break;
+	}
+}
+
+
+int translate(int key_code){
+	switch(key_code)
+	{
+		case 0b00001110:
+			return 0;
+		case 0b00001101:
+			return 1;
+		case 0b00001011:
+			return 2;
+		case 0b00000111:
+			return 3;
+		default:
+			return -1;
+	}
+}
+
+
+int get_key(const char size, const char port){
+	int pin;
+	int younger_bits;
+	int older_bits;
+	
+	switch(port){
+		case 'A':
+			pin = PINA;
+			break;
+		case 'B':
+			pin = PINB;
+			break;
+		case 'C':
+			pin = PINC;
+			break;
+		case 'D':
+			pin = PIND;
+			break;
+		default:
+			pin = 0;
+	}
+	
+	if(size == 's'){
+		younger_bits = pin & 0x0F;
+		younger_bits = translate(younger_bits);
+		if(younger_bits == -1)
+			return 0;
+		return younger_bits + 1;
+		/*switch(pin){
+			case 0b11101110:
+				return 1;
+				break;
+			case 0b11101101:
+				return 2;
+				break;
+			case 0b11101011:
+				return 3;
+				break;
+			case 0b11100111:
+				return 4;
+				break;
+			default:
+				return 0;
+				break;
+		}*/
+	}else if(size == 'b'){
+		col_swap(port);
+		
+		younger_bits = pin & 0x0F;
+		older_bits = pin & 0xF0;
+		older_bits >>= 4;
+		
+		if(translate(younger_bits) == -1)
+			return 0;
+		return translate(younger_bits) * 4 + translate(older_bits) + 1;
+		/*
+		switch(pin){
+			case 0b11101110:
+				return 1;
+				break;
+			case 0b11101101:
+				return 5;
+				break;
+			case 0b11101011:
+				return 9;
+				break;
+			case 0b11100111:
+				return 13;
+				break;
+			case 0b11011110:
+				return 2;
+				break;
+			case 0b11011101:
+				return 6;
+				break;
+			case 0b11011011:
+				return 10;
+				break;
+			case 0b11010111:
+				return 14;
+				break;
+			case 0b10111110:
+				return 3;
+				break;
+			case 0b10111101:
+				return 7;
+				break;
+			case 0b10111011:
+				return 11;
+				break;
+			case 0b10110111:
+				return 15;
+				break;
+			case 0b01111110:
+				return 4;
+				break;
+			case 0b01111101:
+				return 8;
+				break;
+			case 0b01111011:
+				return 12;
+				break;
+			case 0b01110111:
+				return 16;
+				break;
+			default:
+				return 0;
+				break;
+		}*/
+			
+	}else{
+		return 0;
+	}
+	
+}
